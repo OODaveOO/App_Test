@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Générateur de devis</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Lato:wght@400;700;900&display=swap" rel="stylesheet">
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            accent: '#246EAE',
+            anthracite: '#1F2A44',
+          },
+          fontFamily: {
+            sans: ['Lato', 'sans-serif'],
+          },
+        },
+      },
+    };
+  </script>
+  <style>
+    body { font-family: 'Lato', sans-serif; }
+
+    /* Champs éditables discrets : le document reste lisible comme un devis */
+    .champ {
+      background: transparent;
+      border: 1px solid transparent;
+      border-radius: 6px;
+      transition: border-color .15s, background .15s;
+    }
+    .champ:hover { border-color: rgba(31,42,68,.15); }
+    .champ:focus {
+      outline: none;
+      border-color: #246EAE;
+      background: #fff;
+      box-shadow: 0 0 0 3px rgba(36,110,174,.12);
+    }
+
+    /* Mise en page à l'impression */
+    @media print {
+      body { background: #fff; }
+      .no-print { display: none !important; }
+      .feuille { box-shadow: none !important; margin: 0 !important; max-width: none !important; }
+      .champ { border-color: transparent !important; box-shadow: none !important; background: transparent !important; }
+      @page { margin: 1.5cm; }
+    }
+  </style>
+</head>
+<body class="bg-anthracite/5 text-anthracite min-h-screen">
+
+  <!-- Barre d'actions (masquée à l'impression) -->
+  <div class="no-print max-w-3xl mx-auto px-6 pt-6 flex justify-end">
+    <button
+      onclick="window.print()"
+      class="inline-flex items-center gap-2 rounded-lg bg-accent px-5 py-2.5 text-sm font-bold text-white hover:bg-accent/90 focus:outline-none focus:ring-2 focus:ring-accent/40 transition"
+    >
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-4 h-4">
+        <path fill-rule="evenodd" d="M5 2.75A2.75 2.75 0 0 1 7.75 0h4.5A2.75 2.75 0 0 1 15 2.75V5h.25A2.75 2.75 0 0 1 18 7.75v4.5A2.75 2.75 0 0 1 15.25 15H15v2.25A.75.75 0 0 1 14.25 18h-8.5A.75.75 0 0 1 5 17.25V15h-.25A2.75 2.75 0 0 1 2 12.25v-4.5A2.75 2.75 0 0 1 4.75 5H5V2.75Zm1.5 2.25h7V2.75c0-.69-.56-1.25-1.25-1.25h-4.5c-.69 0-1.25.56-1.25 1.25V5Zm0 7.5v4h7v-4h-7Z" clip-rule="evenodd" />
+      </svg>
+      Imprimer
+    </button>
+  </div>
+
+  <!-- Feuille du devis -->
+  <main class="feuille max-w-3xl mx-auto my-6 bg-white rounded-xl shadow-sm px-8 sm:px-12 py-10 sm:py-12">
+
+    <!-- En-tête -->
+    <header class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-6 pb-8 border-b border-anthracite/10">
+      <div>
+        <input class="champ text-xl font-black -ml-1 px-1 py-0.5 w-full max-w-xs" value="Midnight-Lab" aria-label="Nom de l'émetteur">
+        <div class="mt-2 text-sm text-anthracite/60 leading-relaxed">
+          <input class="champ block w-full max-w-xs px-1 py-0.5" value="Studio d'IA générative" aria-label="Activité de l'émetteur">
+          <input class="champ block w-full max-w-xs px-1 py-0.5" placeholder="Adresse" aria-label="Adresse de l'émetteur">
+          <input class="champ block w-full max-w-xs px-1 py-0.5" placeholder="Email / téléphone" aria-label="Contact de l'émetteur">
+        </div>
+      </div>
+      <div class="sm:text-right">
+        <h1 class="text-3xl font-black tracking-tight text-accent">DEVIS</h1>
+        <dl class="mt-3 text-sm space-y-1">
+          <div class="flex sm:justify-end items-center gap-2">
+            <dt class="text-anthracite/60">N°</dt>
+            <dd><input id="numero" class="champ px-1 py-0.5 w-32 sm:text-right" value="DEV-2026-001" aria-label="Numéro du devis"></dd>
+          </div>
+          <div class="flex sm:justify-end items-center gap-2">
+            <dt class="text-anthracite/60">Date</dt>
+            <dd><input id="date" type="date" class="champ px-1 py-0.5 sm:text-right" aria-label="Date du devis"></dd>
+          </div>
+        </dl>
+      </div>
+    </header>
+
+    <!-- Client -->
+    <section class="py-8">
+      <p class="text-xs font-bold uppercase tracking-wide text-anthracite/50 mb-1">Adressé à</p>
+      <input id="client" class="champ text-lg font-bold -ml-1 px-1 py-0.5 w-full max-w-md" placeholder="Nom du client" aria-label="Nom du client">
+    </section>
+
+    <!-- Tableau des lignes -->
+    <section>
+      <table class="w-full text-sm border-collapse">
+        <thead>
+          <tr class="border-b-2 border-anthracite/15 text-left text-xs font-bold uppercase tracking-wide text-anthracite/50">
+            <th class="py-2 pr-3 font-bold">Description</th>
+            <th class="py-2 px-3 font-bold text-right w-20">Qté</th>
+            <th class="py-2 px-3 font-bold text-right w-32">Prix unitaire</th>
+            <th class="py-2 pl-3 font-bold text-right w-32">Montant HT</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr class="border-b border-anthracite/10 align-top">
+            <td class="py-3 pr-3">
+              <input id="description" class="champ w-full px-2 py-1.5" placeholder="Ex. : Conception maquette" aria-label="Description de la prestation">
+            </td>
+            <td class="py-3 px-3">
+              <input id="quantite" type="number" min="0" step="1" value="1" class="champ w-full px-2 py-1.5 text-right" aria-label="Quantité">
+            </td>
+            <td class="py-3 px-3">
+              <input id="prix" type="number" min="0" step="0.01" placeholder="0,00" class="champ w-full px-2 py-1.5 text-right" aria-label="Prix unitaire">
+            </td>
+            <td class="py-3 pl-3 text-right font-bold" id="montant">0,00 €</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <!-- Totaux -->
+    <section class="mt-8 flex justify-end">
+      <dl class="w-full max-w-xs space-y-3">
+        <div class="flex items-center justify-between text-sm">
+          <dt class="text-anthracite/60">Total HT</dt>
+          <dd id="totalHT" class="font-bold">0,00 €</dd>
+        </div>
+        <div class="flex items-center justify-between text-sm">
+          <dt class="text-anthracite/60">TVA (20 %)</dt>
+          <dd id="totalTVA" class="font-bold">0,00 €</dd>
+        </div>
+        <div class="flex items-center justify-between rounded-lg bg-accent/10 px-4 py-3 mt-1">
+          <dt class="font-black text-accent">Total TTC</dt>
+          <dd id="totalTTC" class="font-black text-xl text-accent">0,00 €</dd>
+        </div>
+      </dl>
+    </section>
+
+    <!-- Pied -->
+    <footer class="mt-12 pt-6 border-t border-anthracite/10 text-xs text-anthracite/50">
+      Devis valable 30 jours à compter de la date d'émission. Merci de votre confiance.
+    </footer>
+  </main>
+
+  <script>
+    const TVA = 0.20;
+    const quantite = document.getElementById('quantite');
+    const prix = document.getElementById('prix');
+    const montantEl = document.getElementById('montant');
+    const htEl = document.getElementById('totalHT');
+    const tvaEl = document.getElementById('totalTVA');
+    const ttcEl = document.getElementById('totalTTC');
+
+    const formatEuro = (valeur) =>
+      new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(valeur);
+
+    function majTotal() {
+      const q = parseFloat(quantite.value) || 0;
+      const p = parseFloat(prix.value) || 0;
+      const ht = q * p;
+      const tva = ht * TVA;
+      montantEl.textContent = formatEuro(ht);
+      htEl.textContent = formatEuro(ht);
+      tvaEl.textContent = formatEuro(tva);
+      ttcEl.textContent = formatEuro(ht + tva);
+    }
+
+    quantite.addEventListener('input', majTotal);
+    prix.addEventListener('input', majTotal);
+
+    // Date du jour par défaut
+    document.getElementById('date').valueAsDate = new Date();
+
+    majTotal();
+  </script>
+</body>
+</html>
